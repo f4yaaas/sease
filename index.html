@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sease – Smart Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  font-family: Poppins, sans-serif;
+  background: radial-gradient(circle at top,#1a2a3a,#000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+}
+.card {
+  width: 90%;
+  max-width: 430px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(15px);
+  border-radius: 28px;
+  padding: 30px;
+  text-align: center;
+}
+h1 { font-size: 26px; margin-bottom: 5px }
+p { opacity: .75; font-size: 14px }
+.mic {
+  margin: 28px auto;
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#00f2fe,#4facfe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 42px;
+  cursor: pointer;
+  box-shadow: 0 0 30px #00f2fe;
+}
+#result {
+  margin-top: 20px;
+  min-height: 60px;
+  font-size: 15px;
+  color: #b6eaff;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🤖 SEASE</h1>
+  <p>Smart Voice Assistant</p>
+  <div class="mic" onclick="start()">🎤</div>
+  <div id="result">Tap mic and speak</div>
+</div>
+
+<script>
+// -------------------- PERMISSION SETUP --------------------
+document.addEventListener('deviceready', function() {
+  if(cordova && cordova.plugins && cordova.plugins.permissions){
+    const permissions = cordova.plugins.permissions;
+    permissions.checkPermission(permissions.RECORD_AUDIO, function(status){
+      if(!status.hasPermission){
+        permissions.requestPermission(permissions.RECORD_AUDIO, function(res){
+          if(res.hasPermission){ console.log("Mic permission granted ✅"); }
+          else{ alert("Mic permission denied ❌"); }
+        });
+      }
+    });
+  }
+}, false);
+
+// -------------------- SPEECH SETUP --------------------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(!SR){ alert("Speech Recognition not supported"); }
+
+const recog = new SR();
+recog.lang = "en-US"; // use "ml-IN" for Malayalam
+recog.interimResults = false;
+
+const result = document.getElementById("result");
+
+// -------------------- START LISTEN --------------------
+function start(){
+  speak("Listening");
+  recog.start();
+}
+
+// -------------------- RESULT --------------------
+recog.onresult = e => {
+  let text = e.results[0][0].transcript.toLowerCase();
+  result.innerText = "You said: " + text;
+  smartCommand(text);
+};
+
+// -------------------- SMART COMMAND ENGINE --------------------
+function smartCommand(text){
+
+  // 1️⃣ OPEN WEBSITE (.com)
+  if(text.startsWith("open ") && text.includes(".com")){
+    let site = text.replace("open ","").trim();
+    speak("Opening " + site);
+    window.open("https://" + site, "_system");
+    return;
+  }
+
+  // 2️⃣ OPEN APPS
+  if(text.includes("youtube")){
+    speak("Opening YouTube");
+    openLink("https://youtube.com","vnd.youtube://");
+    return;
+  }
+  if(text.includes("whatsapp")){
+    speak("Opening WhatsApp");
+    openLink(null,"whatsapp://");
+    return;
+  }
+  if(text.includes("instagram")){
+    speak("Opening Instagram");
+    openLink("https://instagram.com","instagram://");
+    return;
+  }
+  if(text.includes("chrome")){
+    speak("Opening Chrome");
+    openLink(null,"googlechrome://");
+    return;
+  }
+
+  // 3️⃣ MALAYALAM COMMANDS
+  if(text.includes("യൂട്യൂബ്")){ speak("Opening YouTube"); openLink("https://youtube.com","vnd.youtube://"); return; }
+  if(text.includes("വാട്സ്ആപ്പ്")){ speak("Opening WhatsApp"); openLink(null,"whatsapp://"); return; }
+  if(text.includes("ഗൂഗിൾ")){ speak("Opening Google"); openLink("https://google.com","googlechrome://"); return; }
+
+  // 4️⃣ NEWS (ANY TOPIC)
+  if(text.includes("news") || text.includes("വാർത്ത")){
+    speak("Fetching latest news");
+    window.open("https://news.google.com/search?q="+encodeURIComponent(text), "_system");
+    return;
+  }
+
+  // 5️⃣ QUESTIONS
+  if(["what","who","how","when","why"].some(w => text.startsWith(w))){
+    speak("Here is what I found");
+    window.open("https://www.google.com/search?q="+encodeURIComponent(text), "_system");
+    return;
+  }
+
+  // 6️⃣ DEFAULT FALLBACK
+  speak("Here is the result");
+  window.open("https://www.google.com/search?q="+encodeURIComponent(text), "_system");
+}
+
+// -------------------- OPEN APP / WEB --------------------
+function openLink(web,app){
+  try{
+    if(app) window.open(app,"_system");
+    else if(web) window.open(web,"_system");
+  }catch{
+    if(web) window.open(web,"_system");
+  }
+}
+
+// -------------------- SPEAK --------------------
+function speak(text){
+  let u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; // use "ml-IN" for Malayalam
+  speechSynthesis.speak(u);
+}
+</script>
+
+</body>
+</html>
