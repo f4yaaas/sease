@@ -89,12 +89,29 @@ function start(){
   recog.start();
 }
 
-// -------------------- RESULT --------------------
-recog.onresult = e => {
-  let text = e.results[0][0].transcript.toLowerCase();
-  result.innerText = "You said: " + text;
-  smartCommand(text);
+// -------------------- SMART APP LINKS --------------------
+const appLinks = {
+  "whatsapp": "whatsapp://",
+  "youtube": "vnd.youtube://",
+  "instagram": "instagram://",
+  "chrome": "googlechrome://",
+  "facebook": "fb://",
+  "telegram": "tg://",
+  "twitter": "twitter://",
+  "maps": "geo://"
 };
+
+function openAppByName(text){
+  let cmd = text.toLowerCase().replace(/\s+/g,''); // normalize text
+  for(let app in appLinks){
+    if(cmd.includes(app)){
+      speak("Opening " + app.charAt(0).toUpperCase() + app.slice(1));
+      openLink(null, appLinks[app]);
+      return true;
+    }
+  }
+  return false;
+}
 
 // -------------------- SMART COMMAND ENGINE --------------------
 function smartCommand(text){
@@ -107,48 +124,24 @@ function smartCommand(text){
     return;
   }
 
-  // 2️⃣ OPEN APPS
-  if(text.includes("youtube")){
-    speak("Opening YouTube");
-    openLink("https://youtube.com","vnd.youtube://");
-    return;
-  }
-  if(text.includes("whatsapp")){
-    speak("Opening WhatsApp");
-    openLink(null,"whatsapp://");
-    return;
-  }
-  if(text.includes("instagram")){
-    speak("Opening Instagram");
-    openLink("https://instagram.com","instagram://");
-    return;
-  }
-  if(text.includes("chrome")){
-    speak("Opening Chrome");
-    openLink(null,"googlechrome://");
-    return;
-  }
+  // 2️⃣ OPEN ANY APP (dynamic)
+  if(openAppByName(text)) return;
 
-  // 3️⃣ MALAYALAM COMMANDS
-  if(text.includes("യൂട്യൂബ്")){ speak("Opening YouTube"); openLink("https://youtube.com","vnd.youtube://"); return; }
-  if(text.includes("വാട്സ്ആപ്പ്")){ speak("Opening WhatsApp"); openLink(null,"whatsapp://"); return; }
-  if(text.includes("ഗൂഗിൾ")){ speak("Opening Google"); openLink("https://google.com","googlechrome://"); return; }
-
-  // 4️⃣ NEWS (ANY TOPIC)
+  // 3️⃣ NEWS (ANY TOPIC)
   if(text.includes("news") || text.includes("വാർത്ത")){
     speak("Fetching latest news");
     window.open("https://news.google.com/search?q="+encodeURIComponent(text), "_system");
     return;
   }
 
-  // 5️⃣ QUESTIONS
+  // 4️⃣ QUESTIONS
   if(["what","who","how","when","why"].some(w => text.startsWith(w))){
     speak("Here is what I found");
     window.open("https://www.google.com/search?q="+encodeURIComponent(text), "_system");
     return;
   }
 
-  // 6️⃣ DEFAULT FALLBACK
+  // 5️⃣ DEFAULT FALLBACK
   speak("Here is the result");
   window.open("https://www.google.com/search?q="+encodeURIComponent(text), "_system");
 }
@@ -169,6 +162,13 @@ function speak(text){
   u.lang = "en-US"; // use "ml-IN" for Malayalam
   speechSynthesis.speak(u);
 }
+
+// -------------------- RESULT --------------------
+recog.onresult = e => {
+  let text = e.results[0][0].transcript.toLowerCase();
+  result.innerText = "You said: " + text;
+  smartCommand(text);
+};
 </script>
 
 </body>
